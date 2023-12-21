@@ -1,0 +1,41 @@
+version: '3.1'
+services:
+  datadog-agent:
+    image: datadog/agent:latest
+    env_file:
+      - ~/sandbox.docker.env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
+    environment:
+      - DD_APM_ENABLED=true
+      - DD_APM_NON_LOCAL_TRAFFIC=true
+      - DD_LOG_LEVEL=TRACE
+      - DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
+      - DD_AC_EXCLUDE=name:datadog-agent
+
+  servicea:
+    build: ./ServiceA
+    container_name: servicea
+    # command: "/ServiceA"
+    volumes:
+      - ./data:/home/data
+    ports:
+      - 8080:8080
+    environment:
+      - DD_AGENT_HOST=datadog-agent
+    depends_on:
+      - datadog-agent
+
+  serviceb:
+    build: ./ServiceB
+    container_name: serviceb
+    volumes:
+      - ./data:/home/data
+    ports:
+      - 8081:8081
+    environment:
+      - DD_AGENT_HOST=datadog-agent
+    depends_on:
+      - datadog-agent
